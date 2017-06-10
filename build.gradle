@@ -1,0 +1,122 @@
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'checkstyle'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.4.RELEASE")
+    }
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integrationTest/java')
+        }
+        resources.srcDir file('src/integrationTest/resources')
+    }
+}
+configurations {
+    ajc
+    aspects
+    compile {
+        extendsFrom aspects
+    }
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+checkstyle {
+    toolVersion = "7.0"
+}
+checkstyleMain {
+    configFile = rootProject.file('buildsupport/checkstyle/checkstyle-main.xml')
+}
+checkstyleTest {
+    configFile = rootProject.file('buildsupport/checkstyle/checkstyle-test.xml')
+}
+checkstyleIntegrationTest {
+    configFile = rootProject.file('buildsupport/checkstyle/checkstyle-test.xml')
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+def aspectj = { destDir, aspectPath, inpath, classpath ->
+    ant.taskdef(resource: "org/aspectj/tools/ant/taskdefs/aspectjTaskdefs.properties",
+            classpath: configurations.ajc.asPath)
+
+    ant.iajc(
+            maxmem: "1024m", fork: "true", Xlint: "ignore",
+            destDir: destDir,
+            aspectPath: aspectPath,
+            inpath: inpath,
+            classpath: classpath,
+            source: project.sourceCompatibility,
+            target: project.targetCompatibility
+    )
+}
+
+dependencies {
+    compile(
+            "org.projectlombok:lombok:1.16.16",
+            'org.apache.tomcat.embed:tomcat-embed-jasper:8.5.11',
+    )
+
+    ajc "org.aspectj:aspectjtools:1.8.10"
+    aspects "org.springframework:spring-aspects:4.3.6.RELEASE"
+
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.3.RELEASE'
+
+
+
+    integrationTestCompile group: 'info.cukes', name: 'cucumber-java', version: '1.2.5'
+    integrationTestCompile group: 'info.cukes', name: 'cucumber-junit', version: '1.2.5'
+    integrationTestCompile group: 'info.cukes', name: 'cucumber-spring', version: '1.2.5'
+
+    testCompile group: 'jmock', name: 'jmock', version: '1.2.0'
+    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.4.5.RELEASE'
+}
+
+compileJava {
+    doLast {
+        aspectj project.sourceSets.main.output.classesDir.absolutePath,
+                configurations.aspects.asPath,
+                project.sourceSets.main.output.classesDir.absolutePath,
+                project.sourceSets.main.runtimeClasspath.asPath
+    }
+}
+
+
+task integrationTest(type: Test) {
+    maxParallelForks = 4
+    include 'com/foodie/au/testing/configuration/CucumberApplicationFeaturesTestConfigurer$*.class'
+    systemProperties['soapui.logroot'] = project.buildDir.toString() + "/soaplog/"
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+}
+task performanceTest(type: Test) {
+    include 'com/foodie/au/testing/configuration/CucumberPerformanceFeaturesTestConfigurer.class'
+    systemProperties['soapui.logroot'] = project.buildDir.toString() + "/soaplog/"
+    testClassesDir = sourceSets.integrationTest.output.classesDir
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+}
+
+tasks.withType(Test) {
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+check.dependsOn integrationTest
+integrationTest.mustRunAfter test

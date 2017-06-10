@@ -1,0 +1,7 @@
+/*.iws
+/.gradle/
+/.idea/
+/build/
+global-groovy.log
+soapui-errors.log
+soapui.log
