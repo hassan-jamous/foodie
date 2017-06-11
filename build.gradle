@@ -10,7 +10,6 @@ buildscript {
         cucumberVersion = '1.2.5'
         springBootVersion = '1.5.2.RELEASE'
         aspectjVersion = "1.8.10"
-        springVersion = "4.3.6.RELEASE"
         lombokVersion = "1.16.16"
         tomcatVersion = "8.5.11"
         checkStyleVersion = "7.0"
@@ -84,7 +83,7 @@ dependencies {
     )
 
     ajc "org.aspectj:aspectjtools:${aspectjVersion}"
-    aspects "org.springframework:spring-aspects:${springVersion}"
+    aspects "org.springframework:spring-aspects"
 
 
     integrationTestCompile(
