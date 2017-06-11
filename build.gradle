@@ -6,11 +6,20 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 buildscript {
+    ext {
+        cucumberVersion = '1.2.5'
+        springBootVersion = '1.5.2.RELEASE'
+        aspectjVersion = "1.8.10"
+        springVersion = "4.3.6.RELEASE"
+        lombokVersion = "1.16.16"
+        tomcatVersion = "8.5.11"
+        checkStyleVersion = "7.0"
+    }
     repositories {
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.4.4.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion")
     }
 }
 
@@ -35,7 +44,7 @@ configurations {
 }
 
 checkstyle {
-    toolVersion = "7.0"
+    toolVersion = checkStyleVersion
 }
 checkstyleMain {
     configFile = rootProject.file('buildsupport/checkstyle/checkstyle-main.xml')
@@ -69,23 +78,24 @@ def aspectj = { destDir, aspectPath, inpath, classpath ->
 
 dependencies {
     compile(
-            "org.projectlombok:lombok:1.16.16",
-            'org.apache.tomcat.embed:tomcat-embed-jasper:8.5.11',
+            "org.projectlombok:lombok:${lombokVersion}",
+            "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}",
+            "org.springframework.boot:spring-boot-starter-web"
     )
 
-    ajc "org.aspectj:aspectjtools:1.8.10"
-    aspects "org.springframework:spring-aspects:4.3.6.RELEASE"
-
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version: '1.5.3.RELEASE'
+    ajc "org.aspectj:aspectjtools:${aspectjVersion}"
+    aspects "org.springframework:spring-aspects:${springVersion}"
 
 
+    integrationTestCompile(
+            "info.cukes:cucumber-java:${cucumberVersion}",
+            "info.cukes:cucumber-junit:${cucumberVersion}",
+            "info.cukes:cucumber-spring:${cucumberVersion}"
+    )
 
-    integrationTestCompile group: 'info.cukes', name: 'cucumber-java', version: '1.2.5'
-    integrationTestCompile group: 'info.cukes', name: 'cucumber-junit', version: '1.2.5'
-    integrationTestCompile group: 'info.cukes', name: 'cucumber-spring', version: '1.2.5'
-
-    testCompile group: 'jmock', name: 'jmock', version: '1.2.0'
-    testCompile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.4.5.RELEASE'
+    testCompile(
+            'org.springframework.boot:spring-boot-starter-test',
+    )
 }
 
 compileJava {
